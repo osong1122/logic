@@ -1,0 +1,668 @@
+create or replace view ANALYTICS_SANDBOX.MAIN.RUNN_BOOKING_9(
+	RAMPUP_PERIOD_NO,
+	ARR_CONTRIBUTION,
+	ARR_START_MONTH,
+	ARR_END_DATE,
+	LAST_CLOSEDWON_END_DATE,
+	PRIMARY_PRODUCT_FAMILY_FLAG,
+	PRIMARY_PRODUCT_FAMILY_FLAG_2,
+	MAX_QUANTITY,
+	QUANTITY_SPLIT_SUM,
+	MAIN_LAST_UPDATED,
+	OPP_LINE_ID,
+	QUOTE_LINE_ID,
+	PRODUCT_CATEGORY,
+	CLASSIFICATION,
+	END_DATE,
+	START_DATE,
+	ANNUAL_VALUE,
+	ANNUAL_VALUE_SPLIT,
+	ACV,
+	ACV_SPLIT,
+	AEB_CONTRIBUTION,
+	AEB_CONTRIBUTION_SPLIT,
+	LINE_PERIOD,
+	TCV,
+	TCV_SPLIT,
+	TRCV,
+	TRCV_SPLIT,
+	PRODUCT,
+	AMOUNT,
+	AMOUNT_SPLIT,
+	QUANTITY,
+	QUANTITY_SPLIT,
+	EFFECTIVE_QUANTITY,
+	EFFECTIVE_QUANTITY_SPLIT,
+	ANNUAL_NEW_UP_SELL_AMOUNT,
+	ANNUAL_NEW_UP_SELL_AMOUNT_SPLIT,
+	ANNUAL_RENEWED_AMOUNT,
+	ANNUAL_RENEWED_AMOUNT_SPLIT,
+	OPP_ID,
+	CLOSE_DATE,
+	STAGE_NAME,
+	PRODUCT_FAMILY,
+	ACCOUNT_ID,
+	BL_SUB_REGION,
+	BL_REGION,
+	CUSTOMER_FIRST_SELL,
+	ALL_FIRST_SELL_FLAG,
+	ALL_LAST_SELL_FLAG,
+	CATEGORY_FIRST_SELL_FLAG,
+	CATEGORY_LAST_SELL_FLAG,
+	OPP_CURRENCY_CODE,
+	TYPE,
+	SPLIT_OWNER_ID,
+	SPLIT_OWNER_NAME,
+	SPLIT_PERCENTAGE,
+	SPLIT_AMOUNT,
+	SPLIT_USER_GEO,
+	SPLIT_USER_SUB_GEO,
+	SPLIT_USER_AVP,
+	SPLIT_USER_DISTRICT,
+	USER_GEO,
+	USER_SUB_GEO,
+	BUNDEL_FLAG,
+	CPQ_FLAG,
+	ANNUAL_VALUE_POPULATED,
+	ACV_POPULATED,
+	AEB_CONTRIBUTION_POPULATED,
+	TCV_POPULATED,
+	TRCV_POPULATED,
+	ANNUAL_NEW_UP_SELL_AMOUNT_POPULATED,
+	ANNUAL_RENEWED_AMOUNT_POPULATED,
+	ACCOUNT_NAME,
+	ACCOUNT_REGION,
+	ACCOUNT_SUB_REGION,
+	ACCOUNT_INDUSTRY,
+	ACCOUNT_CATEGORY,
+	ADD_ON_BUSINESS_TYPE,
+	OPP_CREATED_DATE,
+	DIRECT_INDIRECT,
+	IDENTIFIED_BY_ROLE,
+	IDENTIFIED_BY,
+	OPPORTUNITY_NUMBER,
+	OPP_OWNERID,
+	OPP_REGION,
+	OPP_SUB_REGION,
+	OPP_NAME,
+	OPP_TYPE,
+	PILLAR,
+	ACCOUNT_PARTNER,
+	PROBABILITY,
+	BILLING_COUNTRY,
+	FINANCE_APPROVAL_STATUS,
+	FORECAST_CATEGORY_NAME,
+	MAINTENANCE_END_DATE,
+	MAINTENANCE_START_DATE,
+	MAINTENANCE_PERIOD,
+	MARKET_SEGMENT,
+	OPPORTUNITY_SOURCE,
+	OPP_SYSTEMMODSTAMP,
+	ADDITIONAL_DISCOUNT,
+	LICENSES_TYPE,
+	LINE_ANNUAL_M_S_BEFORE_CONVERSION,
+	NUMBER_OF_EPV_USERS,
+	NEW_LOGO_SINCE,
+	SPLIT_OWNER_ROLE_ID,
+	QUOTE_OPP_LINE_ID,
+	DATA_SOURCE,
+	PRODUCT_CODE,
+	PRODUCT_TYPE,
+	PRODUCT_DELIVERY,
+	SITE_LICENSE,
+	ACCOUNT_PARTNER_NAME,
+	ACCOUNT_PARTNER_ID,
+	EFFECTIVE_DELIVERY_START_DATE,
+	EFFECTIVE_DELIVERY_END_DATE,
+	PRODUCT_NAME,
+	PARTNER_DISCOUNT,
+	PRODUCT_SUB_FAMILY,
+	TBL_PERIOD,
+	QUOTE_NUMBER,
+	WEIGHT_IN_THE_BUNDLE,
+	IDENTIFIED_BY_ROLE_BUCKETED,
+	DATE_SOURCE,
+	V2_OPERATIONS_APPROVAL_STATUS,
+	NEGATIVE_SKU_TYPE,
+	BUNDLE_NEGATIVE_SKU_TYPE,
+	ANNUAL_VALUE_CONTRIBUTION,
+	MSSP,
+	SBQQ_TYPE,
+	SAAS_FAMILY_FIRST_SELL_FLAG,
+	CROSS_SELL_SUB_TO_SAAS_FLAG,
+	KEY_OPP_LINE_ID,
+	KEY_FIX_ID,
+	KEY_OPP_ID,
+	KEY_SUBSCRIPTION_ID,
+	KEY_QUOTE_LINE_ID_BUNDLE,
+	KEY_QUOTE_LINE_ID,
+	KEY_QUOTE_ID,
+	CYBERARK_QUOTE_TYPE,
+	QUOTELINE_RATING,
+	PEER_PRICING_SCORE,
+	CALCULATED_DISCOUNT,
+	PRODUCT_CODE_BUNDLE,
+	PRODUCT_ID_BUNDLE,
+	PRODUCT_FAMILY_BUNDLE,
+	PRODUCT_CATEGORY_BUNDLE,
+	PRODUCT_SUB_FAMILY_BUNDLE,
+	RAMP_UP_DEAL,
+	IS_RAMP_UP,
+	ANNUAL_NEW_UP_SELL_AMOUNT_ORIG,
+	ANNUAL_RENEWED_AMOUNT_ORIG,
+	ANNUAL_VALUE_ORIG,
+	CONVERSION_RATE,
+	WEIGHTED_PIPELINE,
+	FATHER_QUANTITY,
+	QUANTITY_WEIGHT,
+	QUANTITY_CHILD,
+	SUB_END_DATE,
+	SUB_START_DATE,
+	FIX_END_DATE,
+	FIX_START_DATE,
+	OPP_END_DATE,
+	OPP_START_DATE,
+	QUOTE_END_DATE,
+	QUOTE_START_DATE,
+	SPLIT_LIST_TOTAL,
+	RMA_CANCELATION_REASON,
+	PRODUCT_FAMILY_CUSTOM,
+	PRODUCT_FAMILY_CUSTOM_BUNDLE,
+	PRODUCT_FAMILY_CUSTOM_ID,
+	PRODUCT_FAMILY_CUSTOM_ID_BUNDLE,
+	FAMILY_FIRST_SELL_FLAG,
+	EMPLOYEE_NUMBER,
+	AVG_CONVERSIONRATE,
+	BL_DELAYED_DELIVERY_DATE,
+	OPERATIONS_APPROVAL_DATE,
+	BILLING_ACCOUNT_NAME,
+	BILLING_ACCOUNT_ID,
+	REQUESTED_DELIVERY_DATE,
+	NAMED_END_TENANT,
+	QL_NUMBER,
+	EACV,
+	TOTAL_PRIMARY_WEIGHT_IN_THE_BUNDLE,
+	PRIMARY_WEIGHT_IN_THE_BUNDLE,
+	PRIMARY_AEB_CONTRIBUTION_SPLIT,
+	PRIMARY_ACV_SPLIT,
+	REQ_UPLIFT,
+	MAINTENANCE_PERCENT,
+	TOTAL_PRICE_WEIGHTED_AMOUNT,
+	FREE_MONTHS,
+	IS_RAMP_UP_PARENT,
+	SOLUTION_NEW,
+	SUB_REGION,
+	NON_RENEWABLE,
+	SUB_CREATEDDATE,
+	OWNER_GEO,
+	EFFECTIVE_SUBSCRIPTION_TERM_FORMULA,
+	LOST_EACV,
+	PRIMARY_ARR_CONTRIBUTION,
+	MIGRATED_DATE,
+	MIGRATED_ACCOUNT_NAME,
+	MIGRATED_ACCOUNT_ID,
+	ORIGINAL_CONTRACT,
+	MIGRATED_CONTRACT,
+	REPLACEMENT_ID,
+	REPLACEMENT_TYPE,
+	RENEWAL_ARR_UNIT_PRICE,
+	ORIGINAL_ARR_UNIT_PRICE,
+	RENEWAL_LIST_UNIT,
+	ORIGINAL_LIST_UNIT,
+	LIST_PRICE_CHANGE,
+	DISCOUNT_CHANGE,
+	FX_CHANGE,
+	CALCULATED_NET_PRICE_INCREASE,
+	NET_PRICE_INCREASE,
+	CONSOLIDATED_OPPS,
+	LAST_SYSTEMMODSTAMP,
+	PRODUCT_IS_SOLUTION,
+	MAINT_ADJUSTED_PRODUCT_CODE,
+	MAINT_SPLIT,
+	RUNN_PRODUCT,
+	MARKETPLACE_LISTING_FEE,
+	SERVICE_TYPE,
+	PARTNER_CATEGORY,
+	DISTRICT_MAPPED,
+	SUB_REGION_MAPPED,
+	REGION_MAPPED,
+	FIRST_PURCHASE_ACCOUNT,
+	NEGATIVE_OPP,
+	RELATED_PRODUCT_OPPORTUNITY__C,
+	CHURN_OPP,
+	MIGRATION_SOURCE__C,
+	SBQQ__PRIMARYQUOTE__C,
+	MIGRATION_FLAG,
+	DEAL_REG_SOURCE,
+	PRIMARY_VAR_VIA_DISTRIBUTOR_TYPE,
+	CHANNEL_ATTRIBUTION,
+	ACCOUNT_LOWEST_TERRITORY_ASSIGNED,
+	OPPORTUNITY_OWNER,
+	ACCOUNT_OWNER,
+	TIME_IN_CURRENT_STAGE,
+	BRIDGE_DEALS__C,
+	SE_ATTRIBUTION,
+	ADVISORY_PARTNER,
+	PRIMARY_VAR_VIA_DISTRIBUTOR,
+	CLOSE_QUARTER,
+	LINE_DAYS,
+	SUBSCRIPTION_TERM,
+	CLOSE_DATE_CONVERSION_RATE,
+	CURRENT_CONVERSION_RATE,
+	AEB_ADJUSTMENT,
+	OPP_AEB,
+	OPP_ADJUSTABLE_AEB,
+	OPP_PRODUCT_AEB,
+	OPP_PRODUCT_ADJUSTABLE_AEB,
+	AEB_PRODUCT_SPLIT,
+	AEB_ADJUSTABLE_PRODUCT_SPLIT,
+	QUOTE_LINE_AEB_ADJUSTMENT,
+	UPDATED_QUOTE_LINE_AEB_ADJUSTMENT,
+	ADJUSTED_AEB,
+	UPDATED_ADJUSTED_AEB,
+	NN_PCT,
+	U_PCT,
+	R_PCT,
+	RS_FIRST_QTR,
+	NET_NEW_FLAG,
+	FIRST_PURCHASE_PRODUCT,
+	CROSS_SELL_FLAG,
+	PERPETUAL_FLAG,
+	CORRECTED_TCV,
+	CORRECTED_ACV,
+	TEB,
+	UPLIFT,
+	RENEWAL_TCV_WITH_UPLIFT,
+	RENEWAL_ACV_WITH_UPLIFT,
+	UPLIFT_ADJUSTED_TCV,
+	UPLIFT_ADJUSTED_ACV,
+	UPLIFT_TCV,
+	UPLIFT_ACV,
+	NN_NEW_ACV,
+	NN_NEW_TCV,
+	NN_MAINTENANCE_ACV,
+	NN_MAINTENANCE_TCV,
+	U_MAINTENANCE_ACV,
+	U_MAINTENANCE_TCV,
+	U_UPLIFT_ACV,
+	U_UPLIFT_TCV,
+	U_UPSELL_AEB,
+	U_UPSELL_TCV,
+	R_RENEWAL_ACV,
+	R_RENEWAL_TCV,
+	R_NEW_FLAG_NO_AEB_ACV,
+	R_NEW_FLAG_NO_AEB_TCV,
+	NN_CS_ACV,
+	NN_CS_TCV,
+	R_CS_ACV,
+	R_CS_TCV,
+	U_CS_ACV,
+	U_CS_TCV,
+	NN_PS_TCV,
+	U_PS_TCV,
+	NET_NEW_ACV,
+	NET_NEW_TCV,
+	UPSELL_ACV,
+	UPSELL_TCV,
+	RENEWAL_ACV,
+	RENEWAL_TCV
+) as
+(
+/* --- MAINT_SPLIT -------------------------------------------------------- */
+with maint_split as (
+  with qty as (
+    select
+      assetid,
+      oldvalue as original_quantity_history,
+      row_number() over (partition by assetid order by createddate asc) as create_rank
+    from DATALAKE_DB.SALESFORCE.ASSETHISTORY
+    where field = 'Quantity'
+      and newvalue = 0.0
+      and oldvalue > 0
+  )
+  select
+    opp_id as maint_opp_id,
+    case when productfamily = 'AAM' then 'Secrets Manager'
+         when productfamily in ('CorePAS','SIM','Hardware') then 'PAM'
+         else productfamily end                                   as runn_pf,
+    case when productfamily = 'AAM' then 'SECRETS'
+         when productfamily in ('CorePAS','SIM','Hardware') then 'PAM'
+         else productfamily end                                   as runn_pf_code,
+    year(close_date)                                             as cdy,
+    sum(asset_weight)                                            as family_weight,
+    sum(asset_weight) / nullif(max(opp_total), 0)                as maintenance_split
+  from (
+    select
+      cb.opp_id,
+      a.productfamily,
+      cb.close_date,
+      coalesce(q.original_quantity_history, a.quantity) * a.price            as asset_weight,
+      sum(coalesce(q.original_quantity_history, a.quantity) * a.price)
+        over (partition by cb.opp_id)                                        as opp_total
+    from MAIN_DB.MAIN.CYBERARK_BOOKING_T cb
+    left join DATALAKE_DB.SALESFORCE.SBQQ__SUBSCRIPTION__C      sub on sub.id = cb.key_subscription_id
+    left join DATALAKE_DB.SALESFORCE.SBQQ__SUBSCRIBEDASSET__C   sa  on sa.sbqq__subscription__c = sub.id
+    left join DATALAKE_DB.SALESFORCE.ASSET                      a   on a.id = sa.sbqq__asset__c
+    left join qty q on q.assetid = sa.sbqq__asset__c
+                   and q.create_rank = 1
+                   and (a.quantity <= 0 or q.original_quantity_history is not null)
+    where cb.data_source in ('CYBERARK','VENAFI','ZILLA')
+      and year(close_date) >= 2022
+      and cb.product_code not like '%HW%'
+      and stage_name = 'Closed Won'
+      and cb.product_category = 'Maintenance'
+      and cb.product_code in (
+        'MAINT-SW-24X7','MAINT-SW-B','MAINTENANCE-OTHER',
+        'MAINT-EU24X7','MAINTENANCE-OTHER-SUBS','MAINT-NA24X7','MAINT-EU'
+      )
+  )
+  where opp_total > 0
+    and asset_weight is not null
+  group by all
+),
+
+
+rp as (
+  select
+    cb.*,
+
+    /* maintenance mapping */
+    case when ms.runn_pf is not null
+         then concat(cb.product_code,'-', ms.runn_pf_code)
+         else cb.product_code end                               as maint_adjusted_product_code,
+    coalesce(ms.maintenance_split, 1)                           as maint_split,
+
+    case
+      when product_family_custom in ('Cloud Security','PAM SaaS','PAM Self-Hosted','SIM','Hardware') then 'PAM'
+      when product_family_custom in ('Remote Access','Identity Management','Workforce & Customer Access') then 'Access'
+      when product_code in ('MAINT-SSH','MAINT-CM') then 'MIM'
+      when product_category = 'PS' OR PRODUCT_CODE = 'PAS-KEY-ROTATION' then 'Identity Services'
+      when product_category = 'Maintenance' and (coalesce(product_family,'a') = 'PS' or coalesce(product_sub_family,'a') like 'PS-%') then 'Identity Services'
+      when product_category = 'Maintenance' and negative_sku_type is null and ms.runn_pf is null then 'PAM'
+      else coalesce(ms.runn_pf, product_family_custom)
+    end                                                         as runn_product,
+
+    coalesce(cb.negative_sku_type,'A') = 'Marketplace Listing Fee' as marketplace_listing_fee,
+
+case when runn_product = 'Identity Services' 
+        and  (
+        coalesce(product_code_bundle, product_code) in (
+              'PREMIUM-SUPPORT','PLATINUM-SUPPORT','TRUSTED-SUPPORT',
+              'PS-MIM-PSE-SUBS','PS-MIM-PSE','TAS-SUBS','TRUSTED-UPGRADE',
+              'SUCCESS-CSM-ADDON','SUCCESS-TAM-ADDON','PLATINUM-UPGRADE'
+           )
+        or coalesce(product_code_bundle, product_code) like '%SUCCESS_SUBS%'
+        or (product_category = 'PS' and pp2.is_recurring_new__c)
+        ) then 'Recurring Services'
+        when runn_product = 'Identity Services' then 'PS'
+        else 'Not Services'
+        end as service_type,
+    
+    case
+      when cb.opp_id = '0062J00000tXp1AQAS' then 'AWS'
+      when cb.direct_indirect = 'Direct' and op.related_advisory_firm__c is not null then 'Influence'
+      when cb.direct_indirect = 'Direct' then 'Direct'
+      when op.mssp__c = true then 'MSP'
+      when account_partner_name in ('Amazon Marketplace Distributor','Amazon Marketplace','Amazon Web Services')
+        or op.primary_var_via_distributor__c = 'Amazon Marketplace Distributor' then 'AWS'
+      when op.related_advisory_firm__c is not null then 'Influence W/Resell'
+      when cb.direct_indirect = 'Indirect' and account_partner_name is not null then 'Resell'
+      else 'Direct'
+    end                                                         as partner_category,
+
+    /* region mapping */
+    u.district__c                                               as district_mapped,
+    coalesce(u.avp__c, u.sub_geo_formula__c)                    as sub_region_mapped,
+    u.geo__c                                                    as region_mapped,
+
+    /* first purchase (account) */
+    min(iff(stage_name = 'Closed Won' and tcv_split > 0, close_date::date, null))
+      over (partition by account_id)                            as first_purchase_account,
+
+    sum(tcv_split) over (partition by opp_id) < 0               as negative_opp,
+    op.related_product_opportunity__c,
+    zeroifnull(op.eacv_opp_fx__c) > op.acv__c                   as churn_opp,
+    op.migration_source__c,
+    op.sbqq__primaryquote__c,
+
+    case
+      when op.migration_source__c = 'Venafi' and date(close_date) < date('2024-10-01') then false
+      when op.migration_source__c = 'Zilla'  and date(close_date) < date('2025-02-13') then false
+      else true
+    end as migration_flag,
+
+    bp.deal_reg_source,
+    bp.primary_var_via_distributor_type,
+    bp.channel_attribution,
+    bp.account_lowest_territory_assigned,
+    bp.opportunity_owner,
+    bp.account_owner,
+    bp.time_in_current_stage,
+    op.bridge_deals__c,
+    bp.se_attribution,
+    bp.advisory_partner,
+    bp.primary_var_via_distributor,
+
+    concat(year(close_date), '-Q', quarter(close_date))         as close_quarter,
+    datediff('day', cb.start_date, cb.end_date)                 as line_days,
+    coalesce(q.effective_subscription_term_formula__c, vtl.term_length) as subscription_term,
+
+    /* FX */
+    dcr1.conversionrate                                         as close_date_conversion_rate,
+    dcr3.conversionrate                                         as current_conversion_rate,
+
+    /* opp estimated adjustments (kept) */
+    zeroifnull(
+      case
+        when (op.opp_adjustment_status__c in ('Estimated Adjustment','Needs Review') or op.opp_adjustment_status__c is null)
+         and op.forecast_category__c in ('Booked','Commit','Upside','Pipeline')
+         and datediff('quarter', close_date, current_date()) = 0
+        then div0(op.opp_estimated_adjustment__c, dcr3.conversionrate)
+      end
+    ) as aeb_adjustment,
+
+    sum(cb.aeb_contribution_split) over (partition by opp_id)                as opp_aeb,
+    sum(case when coalesce(cb.classification,'a') <> 'Cross-Sell' then cb.aeb_contribution_split else 0 end)
+      over (partition by opp_id)                                             as opp_adjustable_aeb,
+    sum(cb.aeb_contribution_split) over (partition by opp_id, runn_product)  as opp_product_aeb,
+    sum(case when coalesce(cb.classification,'a') <> 'Cross-Sell' then cb.aeb_contribution_split else 0 end)
+      over (partition by opp_id, runn_product)                               as opp_product_adjustable_aeb,
+
+    zeroifnull(div0(opp_product_aeb, opp_aeb))                               as aeb_product_split,
+    zeroifnull(div0(opp_product_adjustable_aeb, opp_adjustable_aeb))         as aeb_adjustable_product_split,
+
+    zeroifnull(div0(aeb_contribution_split, opp_product_aeb) * aeb_product_split * aeb_adjustment) as quote_line_aeb_adjustment,
+    zeroifnull(div0(aeb_contribution_split, opp_product_adjustable_aeb) * aeb_adjustable_product_split * aeb_adjustment) as updated_quote_line_aeb_adjustment,
+
+    coalesce(aeb_contribution_split + quote_line_aeb_adjustment, aeb_contribution_split)           as adjusted_aeb,
+    coalesce(aeb_contribution_split + updated_quote_line_aeb_adjustment, aeb_contribution_split)   as updated_adjusted_aeb,
+
+    /* success-plan weights */
+    rso.nn_pct,
+    rso.u_pct,
+    rso.r_pct, 
+    /* if ATR is Net new, but already had PS*/ 
+    (runn_product = 'Identity Services'
+   AND service_type = 'Recurring Services'
+   AND COALESCE(nn_pct,0) >= 0.999
+   AND COALESCE(u_pct, 0) <= 0.001
+   AND COALESCE(r_pct, 0) <= 0.001)                          AS rs_first_qtr
+    
+  from MAIN_DB.MAIN.CYBERARK_BOOKING_T cb
+  left join DATALAKE_DB.SALESFORCE.ACCOUNT acc on acc.id = cb.account_id
+  left join DATALAKE_DB.SALESFORCE.USER    u   on u.id   = acc.ownerid
+  left join DATALAKE_DB.SALESFORCE.OPPORTUNITY op on op.id = cb.opp_id
+  left join DATALAKE_DB.SALESFORCE.PRODUCT2 pp2 on pp2.id = cb.product_id_bundle
+  left join DATALAKE_DB.SALESFORCE.SBQQ__QUOTE__C q
+    on q.sbqq__opportunity2__c = cb.opp_id and q.sbqq__primary__c and q.isdeleted = false
+  left join (
+    select distinct
+      opp_id as bp_opp,
+      deal_registration_approval_date is not null as deal_reg_source,
+      primary_var_via_distributor_type,
+      channel_attribution,
+      account_lowest_territory_assigned,
+      opportunity_owner,
+      account_owner,
+      time_in_current_stage,
+      se_attribution,
+      advisory_partner,
+      primary_var_via_distributor
+    from MAIN_DB.MAIN.CYBERARK_BOOKING_PLUS_T
+    where data_source in ('CYBERARK','ZILLA','VENAFI','SUCCESS PLANS')
+  ) bp on bp.bp_opp = cb.opp_id
+  /* Venafi term length */
+  left join (
+    select
+      opp_id as vn_opp,
+      months_between(max(end_date), min(start_date)) as term_length
+    from MAIN_DB.MAIN.CYBERARK_BOOKING_T
+    where stage_name = 'Closed Won'
+    group by 1
+  ) vtl on vtl.vn_opp = cb.opp_id
+  /* FX at close date */
+  left join (
+    select dd.date, dcr.isocode, dcr.conversionrate
+    from DATALAKE_DB.GTM_MANUAL.DATE_DIM dd
+    left join MAIN_DB.MAIN.DATED_CONVERSION_RATE_T dcr
+      on dd.date >= dcr.startdate and dd.date < dcr.nextstartdate
+  ) dcr1 on coalesce(cb.opp_currency_code,'USD') = dcr1.isocode
+        and date(cb.close_date) = dcr1.date
+  /* current FX */
+  left join MAIN_DB.MAIN.DATED_CONVERSION_RATE_T dcr3
+    on coalesce(cb.opp_currency_code,'USD') = dcr3.isocode
+   and dcr3.nextstartdate = '9999-12-31 00:00:00.000'
+  /* maintenance product mapping */
+  left join maint_split ms
+    on ms.maint_opp_id = cb.opp_id
+   and cb.product_code in (
+       'MAINT-SW-24X7','MAINT-SW-B','MAINTENANCE-OTHER',
+       'MAINT-EU24X7','MAINTENANCE-OTHER-SUBS','MAINT-NA24X7','MAINT-EU'
+   )
+  /* success-plan weights */
+  left join ANALYTICS_SANDBOX.MAIN.RECURRING_SUCCESS_OPP_SPLIT rso
+    on rso.opp_list = cb.opp_id
+  where cb.data_source in ('CYBERARK','ZILLA','VENAFI','SUCCESS PLANS')
+),
+
+rb as (
+  select
+    rp.*,
+
+    coalesce(datediff('quarter', rp.first_purchase_account, rp.close_date), 0) = 0 as net_new_flag,
+    min(iff(rp.stage_name = 'Closed Won' and rp.tcv_split > 0, rp.close_date::date, null))
+      over (partition by rp.account_id, rp.runn_product) as first_purchase_product,
+    coalesce(
+      datediff(
+        'quarter',
+        min(iff(rp.stage_name = 'Closed Won' and rp.tcv_split > 0, rp.close_date::date, null))
+          over (partition by rp.account_id, rp.runn_product),
+        rp.close_date
+      ), 0
+    ) = 0
+    and coalesce(datediff('quarter', rp.first_purchase_account, rp.close_date), 0) <> 0 as cross_sell_flag,
+    max(iff(rp.product_category = 'Perpetual' and rp.tcv_split > 0, 1, 0))
+      over (partition by rp.opp_id) = 1 as perpetual_flag,
+
+    coalesce(
+      case
+        when rp.migration_source__c = 'Venafi'
+         and rp.sbqq__primaryquote__c is null
+         and datediff('day', rp.start_date, rp.end_date) not between 350 and 380
+          then rp.acv_split * (datediff('day', rp.start_date, rp.end_date) / 365) * maint_split
+        else case when data_source = 'SUCCESS PLANS'
+                   then rp.tcv_split * maint_split * close_date_conversion_rate
+                  else rp.tcv_split * maint_split end
+      end,
+      rp.tcv_split * maint_split
+    ) as corrected_tcv,
+
+    case
+      when service_type = 'PS' or product_category = 'Perpetual' then 0
+      when subscription_term = 0 then corrected_tcv
+      when rp.migration_source__c = 'Venafi' and rp.sbqq__primaryquote__c is null
+           then div0(corrected_tcv, subscription_term * 12)
+      else case when data_source = 'SUCCESS PLANS'
+                 then rp.acv_split * maint_split * close_date_conversion_rate
+                else rp.acv_split * maint_split end
+    end as corrected_acv,
+
+    zeroifnull(
+      case when rp.product_category = 'Perpetual' and rp.aeb_contribution_split <> 0
+           then corrected_tcv
+           else rp.updated_adjusted_aeb * subscription_term / 12 end
+    ) as teb,
+
+    rp.req_uplift as uplift,
+    corrected_tcv - teb as renewal_tcv_with_uplift,
+    case when product_category = 'Perpetual' then 0 else corrected_acv - rp.updated_adjusted_aeb end as renewal_acv_with_uplift,
+
+    case
+      when not rp.churn_opp and not (net_new_flag or cross_sell_flag) and not rp.runn_product in ('Identity Services')
+        then div0((corrected_tcv - teb), (1 + zeroifnull(rp.req_uplift / 100)))
+      else (corrected_tcv - teb)
+    end as uplift_adjusted_tcv,
+
+    case when product_category = 'Perpetual' then 0 else
+      case
+        when not rp.churn_opp and not (net_new_flag or cross_sell_flag)
+         and not rp.runn_product in ('Identity Services') and not product_category = 'Perpetual'
+          then div0((corrected_acv - rp.updated_adjusted_aeb), (1 + zeroifnull(rp.req_uplift / 100)))
+        else (corrected_acv - rp.updated_adjusted_aeb)
+      end
+    end as uplift_adjusted_acv,
+
+    (corrected_tcv - teb) - uplift_adjusted_tcv as uplift_tcv,
+    case when product_category = 'Perpetual' then 0 else (corrected_acv - rp.updated_adjusted_aeb) - uplift_adjusted_acv end as uplift_acv,
+
+    zeroifnull(iff((net_new_flag or cross_sell_flag) and not runn_product in ('Identity Services') and not product_category = 'Perpetual', updated_adjusted_aeb, 0)) as nn_new_acv,
+    zeroifnull(iff((net_new_flag or cross_sell_flag) and not runn_product in ('Identity Services'), teb, 0)) as nn_new_tcv,
+
+    zeroifnull(iff(perpetual_flag and runn_product in ('PAM','Secrets Manager') and product_category = 'Maintenance' and opp_type = 'New Business' and not negative_opp, corrected_acv, 0)) as nn_maintenance_acv,
+    zeroifnull(iff(perpetual_flag and runn_product in ('PAM','Secrets Manager') and product_category = 'Maintenance' and opp_type = 'New Business' and not negative_opp, corrected_tcv, 0)) as nn_maintenance_tcv,
+
+    zeroifnull(iff(perpetual_flag and runn_product in ('PAM','Secrets Manager') and product_category = 'Maintenance' and opp_type <> 'New Business' and not negative_opp, corrected_acv, 0)) as u_maintenance_acv,
+    zeroifnull(iff(perpetual_flag and runn_product in ('PAM','Secrets Manager') and product_category = 'Maintenance' and opp_type <> 'New Business' and not negative_opp, corrected_tcv, 0)) as u_maintenance_tcv,
+
+    zeroifnull(iff(not net_new_flag and not cross_sell_flag and not negative_opp, uplift_acv, 0)) as u_uplift_acv,
+    zeroifnull(iff(not net_new_flag and not cross_sell_flag and not negative_opp, uplift_tcv, 0)) as u_uplift_tcv,
+
+    zeroifnull(iff(not net_new_flag and not cross_sell_flag and not runn_product in ('Identity Services') and not product_category = 'Perpetual', updated_adjusted_aeb, 0)) as u_upsell_aeb,
+    zeroifnull(iff(not net_new_flag and not cross_sell_flag and not runn_product in ('Identity Services'), teb, 0)) as u_upsell_tcv,
+
+    zeroifnull(iff(not net_new_flag and not cross_sell_flag and (perpetual_flag = false or product_category <> 'Maintenance') and runn_product <> ('Identity Services'),
+                   renewal_acv_with_uplift - uplift_acv, 0)) as r_renewal_acv,
+    zeroifnull(iff(not net_new_flag and not cross_sell_flag and (perpetual_flag = false or product_category <> 'Maintenance') and runn_product <> ('Identity Services'),
+                   renewal_tcv_with_uplift - uplift_tcv, 0)) as r_renewal_tcv,
+
+    zeroifnull(iff((net_new_flag or cross_sell_flag) and not perpetual_flag and runn_product <> ('Identity Services'),
+                   renewal_acv_with_uplift - uplift_acv, 0)) as r_new_flag_no_aeb_acv,
+    zeroifnull(iff((net_new_flag or cross_sell_flag) and not perpetual_flag and runn_product <> ('Identity Services'),
+                   renewal_tcv_with_uplift - uplift_tcv, 0)) as r_new_flag_no_aeb_tcv,
+
+    zeroifnull(iff(runn_product = 'Identity Services' and service_type = 'Recurring Services' and (net_new_flag or cross_sell_flag), corrected_acv, 0)) as nn_cs_acv,
+    zeroifnull(iff(runn_product = 'Identity Services' and service_type = 'Recurring Services' and (net_new_flag or cross_sell_flag), corrected_tcv, 0)) as nn_cs_tcv,
+    zeroifnull(iff(runn_product = 'Identity Services' and service_type = 'Recurring Services', corrected_acv * r_pct, 0)) as r_cs_acv,
+    zeroifnull(iff(runn_product = 'Identity Services' and service_type = 'Recurring Services', corrected_tcv * r_pct, 0)) as r_cs_tcv,
+    
+    zeroifnull(IFF(runn_product='Identity Services' AND service_type='Recurring Services' AND NOT (net_new_flag OR cross_sell_flag), corrected_acv * (CASE WHEN rs_first_qtr THEN 1 ELSE COALESCE(u_pct,0) END), 0)) AS u_cs_acv,
+
+    zeroifnull(IFF(runn_product='Identity Services' AND service_type='Recurring Services' AND NOT (net_new_flag OR cross_sell_flag), corrected_tcv * (CASE WHEN rs_first_qtr THEN 1 ELSE COALESCE(u_pct,0) END),0)) AS u_cs_tcv,
+
+    /* PS */
+    zeroifnull(iff(runn_product = 'Identity Services' and service_type = 'PS' and (net_new_flag or cross_sell_flag), corrected_tcv, 0)) as nn_ps_tcv,
+    zeroifnull(iff(runn_product = 'Identity Services' and service_type = 'PS' and not (net_new_flag or cross_sell_flag), corrected_tcv, 0)) as u_ps_tcv,
+
+    /* pillar roll-ups */
+    nn_new_acv + nn_maintenance_acv + nn_cs_acv                        as net_new_acv,
+    nn_new_tcv + nn_maintenance_tcv + nn_cs_tcv + nn_ps_tcv            as net_new_tcv,
+
+    u_maintenance_acv + u_upsell_aeb + u_uplift_acv + u_cs_acv         as upsell_acv,
+    u_maintenance_tcv + u_upsell_tcv + u_uplift_tcv + u_ps_tcv + u_cs_tcv as upsell_tcv,
+
+    r_renewal_acv + r_new_flag_no_aeb_acv + r_cs_acv                   as renewal_acv,
+    r_renewal_tcv + r_new_flag_no_aeb_tcv + r_cs_tcv                   as renewal_tcv
+  from rp
+)
+select * from rb
+);
