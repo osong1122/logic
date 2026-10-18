@@ -1,0 +1,835 @@
+create or replace table analytics_sandbox.main.atr_sub_base_t as
+
+with
+
+subscription as (
+	select * from staging.salesforce.stg_salesforce__sbqq__subscription
+),
+
+quote_line as (
+	select * from staging.salesforce.stg_salesforce__sbqq__quoteline
+),
+
+quote as (
+	select * from staging.salesforce.stg_salesforce__sbqq__quote
+),
+
+opportunity as (
+	select * from staging.salesforce.stg_salesforce__opportunity
+),
+
+opportunity_line as (
+	select * from staging.salesforce.stg_salesforce__opportunity_line_item
+),
+
+contract as (
+	select * from staging.salesforce.stg_salesforce__contract
+),
+
+product as (
+	select * from staging.salesforce.stg_salesforce__product2
+),
+
+account as (
+	select * from staging.salesforce.stg_salesforce__account
+),
+
+replacement as (
+	select * from staging.salesforce.stg_salesforce__replacement
+),
+
+
+family_map as (
+	select column1 as family, column2 as family_group
+	from values
+		('PAM Self-Hosted', 'PAM'), ('PAM SaaS', 'PAM'), ('SIM', 'PAM'), ('Hardware', 'PAM'), ('Cloud Security', 'PAM'),
+		('Workforce & Customer Access', 'Identity Access'), ('Remote Access', 'Identity Access'), ('Identity Management', 'Identity Access'),
+		('Secrets Manager', 'Secrets & AI'), ('AI', 'Secrets & AI'),
+		('EPM', 'EPM'),
+		('MIM', 'MIM'),
+		('Maintenance', 'Maintenance'),
+		('PS', 'PS')
+),
+
+opp_lines as (
+	select
+		oli.sbqq__quoteline__c as quote_line_id,
+		any_value(oli.opportunity_line_id) as opp_line_id,
+		sum(oli.acv__c) as oli_acv,
+		sum(oli.totalprice) as oli_total,
+		sum(oli.quantity) as oli_quantity,
+		min(to_date(oli.line_start_date__c)) as oli_start_date,
+		max(to_date(oli.line_end_date__c)) as oli_end_date
+	from opportunity_line oli
+	join quote_line ql on ql.id = oli.sbqq__quoteline__c
+	join quote q on q.id = ql.sbqq__quote__c and q.sbqq__opportunity2__c = oli.opp_id
+	group by 1
+),
+
+replaced_qty as (
+	select
+		r.original_subscription_c as subscription_id,
+		sum(r.replaced_quantity_c) as replaced_quantity,
+		max(r.current_quantity_c) as repl_current_quantity
+	from replacement r
+	join quote q on q.id = r.replacement_quote_c and not ifnull(q.isdeleted, false)
+	join opportunity o on o.id = q.sbqq__opportunity2__c and o.stagename = 'Closed Won'
+	where not ifnull(r.isdeleted, false)
+		and r.status_c = 'Replaced'
+	group by 1
+),
+
+subs as (
+	select
+		s.id as subscription_id,
+		s.sbqq__account__c as account_id,
+		a.name as account_name,
+		coalesce(oo.named_end_tenant__c, c.named_end_tenant__c, s.sbqq__account__c) as tenant_id,
+		s.sbqq__contract__c as contract_id,
+		s.currencyisocode as currency,
+		to_date(s.sbqq__startdate__c) as sub_start_date,
+		to_date(s.sbqq__enddate__c) as sub_end_date,
+		to_date(s.sbqq__terminateddate__c) as terminated_date,
+		least(ifnull(terminated_date, sub_end_date), sub_end_date) as effective_end_date,
+		s.replacement_status__c as replacement_status,
+		s.item_type__c as item_type,
+		s.sbqq__product__c as product_id,
+		p.productcode as product_code,
+		p.name as product_name,
+		p.product_family_custom__c,
+		f.family_group,
+		s.sbqq__quoteline__c as quote_line_id,
+		ql.sbqq__renewedsubscription__c as renewed_subscription_id,
+		ql.sbqq__upgradedsubscription__c as upgraded_subscription_id,
+		ifnull(ql.isdeleted, false) or ifnull(oq.isdeleted, false) as is_deleted_line,
+		ql.sbqq__quote__c as origin_quote_id,
+		oq.sbqq__opportunity2__c as origin_opportunity_id,
+		oo.name as origin_opportunity_name,
+		oo.stagename as origin_opp_stage,
+		to_date(oo.closedate) as origin_close_date,
+		oli.opp_line_id,
+		oli.oli_quantity,
+		oli.oli_total,
+		oli.oli_acv,
+		s.sbqq__customerprice__c as customer_price,
+		s.sbqq__quantity__c as quantity,
+		s.original_quantity__c as original_quantity,
+		rq.replaced_quantity,
+		case
+			when s.replacement_status__c in ('Replaced', 'Partial Replacement') and s.original_quantity__c > 0 then s.original_quantity__c
+			when s.sbqq__quantity__c = 0 then ifnull(rq.repl_current_quantity, 0)
+			else s.sbqq__quantity__c
+		end as atr_quantity,
+		ifnull(s.sbqq__regularprice__c, 0) = 0 as is_zero_priced,
+		oli.oli_start_date is not null and oli.oli_end_date is not null as has_oli_dates,
+		coalesce(
+			case when has_oli_dates then oli.oli_start_date end,
+			to_date(ql.sbqq__effectivestartdate__c),
+			sub_start_date
+		) as term_start_date,
+		coalesce(
+			case when has_oli_dates then oli.oli_end_date end,
+			to_date(ql.sbqq__effectiveenddate__c),
+			dateadd(day, -1, dateadd(month, ql.subscriptionterm_formula__c, to_date(ql.sbqq__effectivestartdate__c))),
+			sub_end_date
+		) as term_end_date,
+		case
+			when has_oli_dates then 'OLI DATES'
+			when ql.id is null then 'SUB DATES'
+			when ql.sbqq__effectiveenddate__c is not null then 'QL DATES'
+			else 'QL START + TERM'
+		end as term_basis,
+		round(months_between(dateadd(day, 1, term_end_date), term_start_date), 1) as term_months,
+		case
+			when is_zero_priced then 'ZERO PRICED'
+			when oli.quote_line_id is null or ifnull(oli.oli_quantity, 0) = 0 then 'SUB PRICE'
+			else 'OPP LINE'
+		end as atr_basis,
+		oli.oli_total * 12 / nullif(term_months, 0) as oli_annual_value,
+		case when is_zero_priced then 0 else s.sbqq__customerprice__c end * 12 / nullif(term_months, 0) * atr_quantity as sub_price_annual_value,
+		case when is_zero_priced then 0 else s.sbqq__customerprice__c * s.sbqq__quantity__c end * 12 / nullif(term_months, 0) as sub_price_acv
+	from subscription s
+	left join account a on a.id = s.sbqq__account__c
+	left join product p on p.id = s.sbqq__product__c
+	left join family_map f on f.family = p.product_family_custom__c
+	left join quote_line ql on ql.id = s.sbqq__quoteline__c
+	left join quote oq on oq.id = ql.sbqq__quote__c
+	left join opportunity oo on oo.id = oq.sbqq__opportunity2__c
+	left join contract c on c.id = s.sbqq__contract__c
+	left join opp_lines oli on oli.quote_line_id = s.sbqq__quoteline__c
+	left join replaced_qty rq on rq.subscription_id = s.id
+),
+
+sub_lines as (
+	select
+		s.*,
+		case when s.quote_line_id is null then 1 else count(*) over (partition by s.quote_line_id) end as subs_on_opp_line,
+		subs_on_opp_line > 1 as is_one_to_many,
+		case
+			when is_one_to_many then ifnull(s.customer_price * s.atr_quantity / nullif(sum(s.customer_price * s.atr_quantity) over (partition by s.quote_line_id), 0), 1 / subs_on_opp_line)
+			else 1
+		end as line_share,
+		case
+			when s.atr_basis = 'ZERO PRICED' then 0
+			when s.atr_basis = 'SUB PRICE' then s.sub_price_annual_value
+			when is_one_to_many then s.oli_annual_value * line_share
+			else s.oli_annual_value * s.atr_quantity / s.oli_quantity
+		end as annual_value,
+		annual_value / nullif(s.atr_quantity, 0) as annual_unit_price,
+		coalesce(s.oli_acv * line_share, s.sub_price_acv) as renewal_acv,
+		min(s.sub_start_date) over (partition by coalesce(s.origin_quote_id, s.subscription_id), s.product_id) as group_first_start
+	from subs s
+)
+
+select
+	l.*,
+	sum(l.renewal_acv) over (partition by coalesce(l.origin_quote_id, l.subscription_id), l.product_id) as group_acv,
+	sum(case when l.sub_start_date = l.group_first_start then l.annual_value else 0 end)
+		over (partition by coalesce(l.origin_quote_id, l.subscription_id), l.product_id) as group_first_entry,
+	l.renewal_acv
+		+ case
+			when l.sub_start_date = l.group_first_start then greatest(group_first_entry - group_acv, 0) * ifnull(l.annual_value / nullif(group_first_entry, 0), 0)
+			else 0
+		end as renewal_value,
+	l.origin_quote_id is not null and l.sub_end_date < max(l.sub_end_date) over (partition by l.origin_quote_id, l.product_id) as is_ramp_interim,
+	case when is_ramp_interim then 0 else l.annual_value end as exit_atr,
+	case
+		when l.replacement_status = 'Partial Replacement' then least(1, ifnull(l.replaced_quantity, 0) / nullif(l.atr_quantity, 0))
+		else 0
+	end as replaced_ratio,
+	l.item_type = 'Selling Item'
+		and l.sub_end_date >= '2025-11-01'
+		and (l.origin_opportunity_id is null or l.origin_opp_stage in ('Closed Won', 'Consumption - Closed')) as in_population
+from sub_lines l
+;
+
+
+create or replace table analytics_sandbox.main.atr_renewals_t as
+
+with
+
+atr_sub_base as (
+	select * from analytics_sandbox.main.atr_sub_base_t
+),
+
+opportunity_line as (
+	select * from staging.salesforce.stg_salesforce__opportunity_line_item
+),
+
+opportunity as (
+	select * from staging.salesforce.stg_salesforce__opportunity
+),
+
+quote_line as (
+	select * from staging.salesforce.stg_salesforce__sbqq__quoteline
+),
+
+quote as (
+	select * from staging.salesforce.stg_salesforce__sbqq__quote
+),
+
+product as (
+	select * from staging.salesforce.stg_salesforce__product2
+),
+
+fx_rate as (
+	select * from datalake_db.salesforce.datedconversionrate
+),
+
+
+family_map as (
+	select distinct
+		product_family_custom__c as family,
+		family_group
+	from atr_sub_base
+	where family_group is not null
+),
+
+contracted as (
+	select distinct origin_opportunity_id as opp_id
+	from atr_sub_base
+	where origin_opportunity_id is not null
+),
+
+
+deal_lines as (
+	select
+		oli.opp_id,
+		o.name as opp_name,
+		oli.opportunity_line_id as opp_line_id,
+		oli.sbqq__quoteline__c as quote_line_id,
+		ql.sbqq__renewedsubscription__c as renewed_subscription_id,
+		oli.sbqq__quoteline__c is not null as is_cpq,
+		coalesce(o.named_end_tenant__c, o.accountid) as tenant_id,
+		o.currencyisocode as currency,
+		to_date(o.closedate) as close_date,
+		oli.product2id as product_id,
+		p.productcode as product_code,
+		p.product_family_custom__c,
+		f.family_group,
+		oli.quantity,
+		oli.totalprice,
+		oli.acv__c as acv,
+		to_date(oli.line_start_date__c) as line_start_date,
+		to_date(oli.line_end_date__c) as line_end_date,
+		round(months_between(dateadd(day, 1, to_date(oli.line_end_date__c)), to_date(oli.line_start_date__c)), 1) as line_months,
+		oli.totalprice * 12 / nullif(line_months, 0) as annual_value
+	from opportunity_line oli
+	join opportunity o on o.id = oli.opp_id and o.stagename = 'Closed Won'
+	left join quote_line ql on ql.id = oli.sbqq__quoteline__c
+	left join quote q on q.id = ql.sbqq__quote__c
+	left join product p on p.id = oli.product2id
+	left join family_map f on f.family = p.product_family_custom__c
+	where not ifnull(oli.isdeleted, false)
+		and (oli.sbqq__quoteline__c is null
+			or (q.sbqq__opportunity2__c = oli.opp_id and not ifnull(ql.isdeleted, false) and not ifnull(q.isdeleted, false)))
+		and ifnull(ql.item_type__c, 'Selling Item') = 'Selling Item'
+		and ql.sbqq__upgradedsubscription__c is null
+		and f.family_group is not null
+),
+
+deal_ramps as (
+	select
+		l.*,
+		min(l.line_start_date) over (partition by l.opp_id, l.product_id) as product_first_start
+	from deal_lines l
+),
+
+
+valued as (
+	select
+		r.*,
+		sum(ifnull(r.acv, 0)) over (partition by r.opp_id, r.product_id) as product_acv,
+		sum(case when r.line_start_date = r.product_first_start then ifnull(r.annual_value, 0) else 0 end)
+			over (partition by r.opp_id, r.product_id) as product_first_annual,
+		ifnull(r.acv, 0)
+			+ case
+				when r.line_start_date = r.product_first_start then greatest(product_first_annual - product_acv, 0) * ifnull(r.annual_value / nullif(product_first_annual, 0), 0)
+				else 0
+			end as renewal_value
+	from deal_ramps r
+),
+
+deal_fx as (
+	select
+		d.opp_id,
+		fx.isocode as currency,
+		fx.conversionrate as rate
+	from (select distinct opp_id, close_date from deal_lines) d
+	join fx_rate fx on d.close_date >= fx.startdate and d.close_date < fx.nextstartdate
+	qualify row_number() over (partition by d.opp_id, fx.isocode order by fx.startdate desc) = 1
+)
+
+select
+	v.opp_id,
+	v.opp_name,
+	v.opp_line_id,
+	v.quote_line_id,
+	v.renewed_subscription_id,
+	v.is_cpq,
+	c.opp_id is not null as is_contracted,
+	v.tenant_id,
+	v.currency,
+	v.close_date,
+	v.product_id,
+	v.product_code,
+	v.product_family_custom__c,
+	v.family_group,
+	v.quantity,
+	v.totalprice,
+	v.acv,
+	v.line_start_date,
+	v.line_end_date,
+	v.line_months,
+	v.annual_value,
+	v.renewal_value,
+	v.renewal_value / fx.rate as renewal_value_usd,
+	min(v.line_start_date) over (partition by v.opp_id) as deal_start_date,
+	max(v.line_end_date) over (partition by v.opp_id) as deal_end_date
+from valued v
+join deal_fx fx on fx.opp_id = v.opp_id and fx.currency = v.currency
+left join contracted c on c.opp_id = v.opp_id
+;
+
+
+-- ============================================================
+
+
+create or replace table analytics_sandbox.main.atr_matched_t as
+
+with
+
+-- imports
+atr_sub_base as (
+	select * from analytics_sandbox.main.atr_sub_base_t
+),
+
+atr_renewals as (
+	select * from analytics_sandbox.main.atr_renewals_t
+),
+
+quote_line as (
+	select * from staging.salesforce.stg_salesforce__sbqq__quoteline
+),
+
+quote as (
+	select * from staging.salesforce.stg_salesforce__sbqq__quote
+),
+
+opportunity as (
+	select * from staging.salesforce.stg_salesforce__opportunity
+),
+
+contract as (
+	select * from staging.salesforce.stg_salesforce__contract
+),
+
+replacement as (
+	select * from staging.salesforce.stg_salesforce__replacement
+),
+
+subscribed_asset as (
+	select * from staging.salesforce.stg_salesforce__sbqq__subscribedasset
+),
+
+asset as (
+	select * from staging.salesforce.stg_salesforce__asset
+),
+
+account_asset as (
+	select * from staging.salesforce.stg_salesforce__accountassets
+),
+
+product as (
+	select * from staging.salesforce.stg_salesforce__product2
+),
+
+account as (
+	select * from staging.salesforce.stg_salesforce__account
+),
+
+fx_rate as (
+	select * from datalake_db.salesforce.datedconversionrate
+),
+
+
+
+linkable_subs as (
+	select *
+	from atr_sub_base
+	where item_type = 'Selling Item'
+		and exit_atr > 0
+),
+
+family_map as (
+	select distinct
+		product_family_custom__c as family,
+		family_group
+	from atr_sub_base
+	where family_group is not null
+),
+
+deals as (
+	select
+		opp_id,
+		any_value(tenant_id) as tenant_id,
+		any_value(close_date) as close_date,
+		any_value(deal_start_date) as start_date,
+		any_value(deal_end_date) as end_date
+	from atr_renewals
+	group by 1
+),
+
+deal_dollars as (
+	select
+		opp_id,
+		family_group,
+		sum(renewal_value_usd) as pool_usd
+	from atr_renewals
+	group by 1, 2
+	having pool_usd > 0
+),
+
+deal_fx as (
+	select
+		d.opp_id,
+		fx.isocode as currency,
+		fx.conversionrate as rate
+	from deals d
+	join fx_rate fx on d.close_date >= fx.startdate and d.close_date < fx.nextstartdate
+	qualify row_number() over (partition by d.opp_id, fx.isocode order by fx.startdate desc) = 1
+),
+
+renewal_opps as (
+	select
+		ql.sbqq__renewedsubscription__c as subscription_id,
+		q.sbqq__opportunity2__c as renewal_opp_id
+	from quote_line ql
+	join quote q on q.id = ql.sbqq__quote__c and q.sbqq__primary__c and not ifnull(q.isdeleted, false)
+	where not ifnull(ql.isdeleted, false)
+		and ql.sbqq__renewedsubscription__c is not null
+	union
+	select
+		s.subscription_id,
+		c.sbqq__renewalopportunity__c as renewal_opp_id
+	from linkable_subs s
+	join contract c on c.id = s.contract_id
+	where c.sbqq__renewalopportunity__c is not null
+),
+
+open_renewals as (
+	select distinct r.subscription_id
+	from renewal_opps r
+	join opportunity o on o.id = r.renewal_opp_id
+	where o.stagename not ilike 'closed%'
+		and o.stagename <> 'Consumption - Closed'
+),
+
+consolidated_into as (
+	select
+		o1.id as start_opp_id,
+		case when o2.stagename = 'Closed Won' then o2.id
+			when o3.stagename = 'Closed Won' then o3.id
+			when o4.stagename = 'Closed Won' then o4.id
+			when o5.stagename = 'Closed Won' then o5.id
+			when o6.stagename = 'Closed Won' then o6.id end as opp_id
+	from opportunity o1
+	join opportunity o2 on o2.id = o1.consolidated_into__c
+	left join opportunity o3 on o3.id = o2.consolidated_into__c and o2.stagename <> 'Closed Won'
+	left join opportunity o4 on o4.id = o3.consolidated_into__c and o3.stagename <> 'Closed Won'
+	left join opportunity o5 on o5.id = o4.consolidated_into__c and o4.stagename <> 'Closed Won'
+	left join opportunity o6 on o6.id = o5.consolidated_into__c and o5.stagename <> 'Closed Won'
+	where o1.consolidated_into__c <> o1.id
+		and o1.stagename <> 'Closed Won'
+		and opp_id is not null
+),
+
+
+direct_links as (
+	select
+		s.subscription_id,
+		r.opp_id,
+		'DIRECT' as link_type,
+		null as fill_tier,
+		1 as priority,
+		s.family_group,
+		s.exit_atr * (1 - s.replaced_ratio) as cap_local,
+		sum(r.renewal_value) as renewed_value
+	from atr_renewals r
+	join linkable_subs s on s.subscription_id = r.renewed_subscription_id
+	group by 1, 2, 3, 4, 5, 6, 7
+),
+
+replacement_links as (
+	select
+		s.subscription_id,
+		q.sbqq__opportunity2__c as opp_id,
+		'REPLACEMENT' as link_type,
+		null as fill_tier,
+		2 as priority,
+		s.family_group,
+		s.exit_atr * case when s.replacement_status = 'Partial Replacement' then s.replaced_ratio else 1 end as cap_local
+	from replacement r
+	join quote q on q.id = r.replacement_quote_c and not ifnull(q.isdeleted, false)
+	join opportunity o on o.id = q.sbqq__opportunity2__c and o.stagename = 'Closed Won'
+	join linkable_subs s on s.subscription_id = r.original_subscription_c
+	where not ifnull(r.isdeleted, false)
+		and r.status_c = 'Replaced'
+	qualify row_number() over (partition by s.subscription_id, q.sbqq__opportunity2__c order by r.lastmodifieddate desc) = 1
+),
+
+
+sub_assets as (
+	select
+		sa.sbqq__subscription__c as subscription_id,
+		sa.sbqq__asset__c as asset_id,
+		ifnull(sa.asset_price__c * sa.asset_quantity__c, 0) as asset_value,
+		f.family_group as asset_family_group
+	from subscribed_asset sa
+	left join asset a on a.id = sa.sbqq__asset__c
+	left join product p on p.id = a.product2id
+	left join family_map f on f.family = p.product_family_custom__c
+	where not ifnull(sa.isdeleted, false)
+),
+
+sub_asset_totals as (
+	select
+		subscription_id,
+		sum(asset_value) as total_asset_value,
+		count(*) as total_assets
+	from sub_assets
+	group by 1
+),
+
+converted_assets as (
+	select
+		aa.asset__c as asset_id,
+		q.sbqq__opportunity2__c as opp_id,
+		least(1, ifnull(aa.converted_qty__c / nullif(aa.orginal_quantity__c, 0), 1)) as converted_ratio
+	from account_asset aa
+	join quote q on q.id = aa.quote__c and not ifnull(q.isdeleted, false)
+	join opportunity o on o.id = q.sbqq__opportunity2__c and o.stagename = 'Closed Won'
+	where not ifnull(aa.isdeleted, false)
+		and aa.status__c in ('Converted', 'Pending Conversion activation')
+	qualify row_number() over (partition by aa.asset__c order by (aa.status__c = 'Converted') desc, aa.lastmodifieddate desc) = 1
+),
+
+conversion_links as (
+	select
+		s.subscription_id,
+		ca.opp_id,
+		'CONVERSION' as link_type,
+		null as fill_tier,
+		3 as priority,
+		sa.asset_family_group as family_group,
+		any_value(s.exit_atr) * least(1,
+			case
+				when any_value(t.total_asset_value) > 0 then sum(sa.asset_value * ca.converted_ratio) / any_value(t.total_asset_value)
+				else sum(ca.converted_ratio) / any_value(t.total_assets)
+			end
+		) as cap_local
+	from sub_assets sa
+	join converted_assets ca on ca.asset_id = sa.asset_id
+	join sub_asset_totals t on t.subscription_id = sa.subscription_id
+	join linkable_subs s on s.subscription_id = sa.subscription_id
+	where sa.asset_family_group is not null
+	group by s.subscription_id, ca.opp_id, sa.asset_family_group
+),
+
+contract_renewals as (
+	select
+		c.id as contract_id,
+		c.sbqq__renewalopportunity__c as opp_id
+	from contract c
+	join opportunity o on o.id = c.sbqq__renewalopportunity__c and o.stagename = 'Closed Won'
+	union
+	select
+		sbqq__renewedcontract__c as contract_id,
+		id as opp_id
+	from opportunity
+	where sbqq__renewedcontract__c is not null
+		and stagename = 'Closed Won'
+),
+
+contract_links as (
+	select
+		s.subscription_id,
+		cr.opp_id,
+		'CONTRACT' as link_type,
+		null as fill_tier,
+		4 as priority,
+		s.family_group,
+		s.exit_atr as cap_local
+	from linkable_subs s
+	join contract_renewals cr on cr.contract_id = s.contract_id
+),
+
+consolidated_links as (
+	select distinct
+		s.subscription_id,
+		ci.opp_id,
+		'LINKED EXPANSION' as link_type,
+		'VIA CONSOLIDATED INTO' as fill_tier,
+		5 as priority,
+		s.family_group,
+		s.exit_atr as cap_local
+	from renewal_opps r
+	join consolidated_into ci on ci.start_opp_id = r.renewal_opp_id
+	join linkable_subs s on s.subscription_id = r.subscription_id
+),
+
+related_links as (
+	select distinct
+		s.subscription_id,
+		case when ro.stagename = 'Closed Won' then ro.id else ci.opp_id end as opp_id,
+		'LINKED EXPANSION' as link_type,
+		'VIA RELATED PRODUCT OPP' as fill_tier,
+		5 as priority,
+		s.family_group,
+		s.exit_atr as cap_local
+	from renewal_opps r
+	join opportunity o on o.id = r.renewal_opp_id
+	join opportunity ro on ro.id = coalesce(o.related_product_opportunity__c, o.related_product_opportunity_id)
+	left join consolidated_into ci on ci.start_opp_id = ro.id
+	join linkable_subs s on s.subscription_id = r.subscription_id
+	where ((o.stagename ilike 'closed%' and o.stagename <> 'Closed Won') or o.stagename = 'Consumption - Closed')
+		and (ro.stagename = 'Closed Won' or ci.opp_id is not null)
+),
+
+linked_deals as (
+	select subscription_id, opp_id from direct_links
+	union select subscription_id, opp_id from replacement_links
+	union select subscription_id, opp_id from conversion_links
+	union select subscription_id, opp_id from contract_links
+	union select subscription_id, opp_id from consolidated_links
+	union select subscription_id, opp_id from related_links
+),
+
+sub_tenants as (
+	select
+		subscription_id,
+		tenant_id
+	from linkable_subs
+	union
+	select
+		l.subscription_id,
+		coalesce(o.named_end_tenant__c, o.accountid) as tenant_id
+	from linked_deals l
+	join opportunity o on o.id = l.opp_id
+),
+
+
+account_links as (
+	select
+		s.subscription_id,
+		d.opp_id,
+		'ACCOUNT EXPANSION' as link_type,
+		case
+			when datediff(day, dateadd(day, 1, s.effective_end_date), d.start_date) between -90 and 90 then 'ON TIME'
+			when datediff(day, dateadd(day, 1, s.effective_end_date), d.start_date) > 90 then 'LATE'
+			else 'EARLY'
+		end as fill_tier,
+		case when fill_tier = 'EARLY' then 7 else 6 end as priority,
+		s.family_group,
+		s.exit_atr as cap_local
+	from linkable_subs s
+	join sub_tenants t on t.subscription_id = s.subscription_id
+	join deals d on d.tenant_id = t.tenant_id
+	left join linked_deals ld on ld.subscription_id = s.subscription_id and ld.opp_id = d.opp_id
+	where ld.opp_id is null
+		and d.close_date > ifnull(s.origin_close_date, s.sub_start_date)
+		and d.end_date > dateadd(day, 31, s.effective_end_date)
+		and d.start_date <= dateadd(day, 180, s.effective_end_date)
+	qualify row_number() over (partition by s.subscription_id, d.opp_id order by d.opp_id) = 1
+),
+
+all_links as (
+	select subscription_id, opp_id, link_type, fill_tier, priority, family_group, cap_local from direct_links
+	union all
+	select subscription_id, opp_id, link_type, fill_tier, priority, family_group, cap_local from replacement_links
+	union all
+	select subscription_id, opp_id, link_type, fill_tier, priority, family_group, cap_local from conversion_links
+	union all
+	select subscription_id, opp_id, link_type, fill_tier, priority, family_group, cap_local from contract_links
+	union all
+	select subscription_id, opp_id, link_type, fill_tier, priority, family_group, cap_local from consolidated_links
+	union all
+	select subscription_id, opp_id, link_type, fill_tier, priority, family_group, cap_local from related_links
+	union all
+	select subscription_id, opp_id, link_type, fill_tier, priority, family_group, cap_local from account_links
+),
+
+
+best_link as (
+	select
+		l.*,
+		s.sub_end_date,
+		fx.rate,
+		r.pool_usd,
+		least(s.exit_atr, l.cap_local) / fx.rate as need_usd
+	from all_links l
+	join linkable_subs s on s.subscription_id = l.subscription_id
+	join deal_dollars r on r.opp_id = l.opp_id and r.family_group = l.family_group
+	join deal_fx fx on fx.opp_id = l.opp_id and fx.currency = s.currency
+	left join open_renewals o on o.subscription_id = l.subscription_id
+	where l.cap_local > 0
+		and (l.priority < 5 or o.subscription_id is null)
+	qualify row_number() over (partition by l.subscription_id order by l.priority, r.pool_usd desc, l.opp_id) = 1
+),
+
+
+fill_queue as (
+	select
+		b.*,
+		ifnull(sum(b.need_usd) over (partition by b.opp_id, b.family_group order by b.priority, b.sub_end_date, b.subscription_id rows between unbounded preceding and 1 preceding), 0) as need_ahead_usd
+	from best_link b
+),
+
+fills as (
+	select
+		q.*,
+		least(q.need_usd, greatest(q.pool_usd - q.need_ahead_usd, 0)) as fill_usd,
+		fill_usd * q.rate as fill_local
+	from fill_queue q
+),
+
+direct_renewed as (
+	select
+		subscription_id,
+		sum(renewed_value) as renewed_value
+	from direct_links
+	group by 1
+)
+
+select
+	s.account_id,
+	s.account_name,
+	s.tenant_id as end_tenant_id,
+	et.name as end_tenant_name,
+	s.subscription_id,
+	s.contract_id,
+	s.currency,
+	s.sub_start_date,
+	s.sub_end_date,
+	s.replacement_status,
+	s.terminated_date,
+	s.product_code,
+	s.product_name,
+	s.product_family_custom__c,
+	s.family_group,
+
+	s.origin_opportunity_id,
+	s.origin_opportunity_name,
+	s.opp_line_id,
+	s.atr_basis,
+	s.quantity,
+	s.original_quantity,
+	s.atr_quantity,
+	s.oli_quantity,
+	s.oli_total,
+	s.term_start_date,
+	s.term_end_date,
+	s.term_months,
+	s.term_basis,
+	s.annual_unit_price,
+	s.annual_value,
+	s.is_ramp_interim,
+	s.is_zero_priced,
+	s.is_one_to_many,
+	s.subs_on_opp_line,
+	s.line_share,
+	s.exit_atr,
+
+	case when f.link_type = 'DIRECT' then f.fill_local else 0 end as filled_direct,
+	case when f.link_type = 'REPLACEMENT' then f.fill_local else 0 end as filled_replacement,
+	case when f.link_type = 'CONVERSION' then f.fill_local else 0 end as filled_conversion,
+	case when f.link_type = 'CONTRACT' then f.fill_local else 0 end as filled_contract,
+	case when f.link_type = 'LINKED EXPANSION' then f.fill_local else 0 end as filled_linked_expansion,
+	case when f.link_type = 'ACCOUNT EXPANSION' then f.fill_local else 0 end as filled_account_expansion,
+	ifnull(f.fill_local, 0) as filled_total,
+	greatest(ifnull(s.exit_atr, 0) - filled_total, 0) as unfilled,
+	filled_total / nullif(s.exit_atr, 0) as pct_filled,
+	case
+		when ifnull(s.exit_atr, 0) <= 0 then 'NO ATR'
+		when filled_total <= 0.5 then 'UNFILLED'
+		when filled_total < s.exit_atr - 0.5 then 'PARTIAL'
+		else 'FILLED'
+	end as fill_status,
+	greatest(ifnull(dr.renewed_value, 0) - ifnull(s.exit_atr, 0), 0) as direct_renewal_above_atr,
+
+	case when filled_total > 0.005 then 1 else 0 end as connection_count,
+	case when filled_total > 0.005 then f.opp_id end as connection_1,
+	case when filled_total > 0.005 then o.name end as connection_1_opp_name,
+	case when filled_total > 0.005 then concat(f.link_type, ifnull(concat(' ', f.fill_tier), '')) end as connection_1_reason,
+	case when filled_total > 0.005 then f.fill_local end as connection_1_filled,
+	null as connection_2,
+	null as connection_2_opp_name,
+	null as connection_2_reason,
+	null as connection_2_filled
+from atr_sub_base s
+left join fills f on f.subscription_id = s.subscription_id
+left join opportunity o on o.id = f.opp_id
+left join account et on et.id = s.tenant_id
+left join direct_renewed dr on dr.subscription_id = s.subscription_id
+where s.in_population
+;
